@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script id="vertexShader" type="x-shader/x-vertex">
+        attribute vec3 pos;
+        attribute vec4 clr;
+
+        uniform mat4 trans;
+        
+        varying vec4 vcolor;
+
+        void main(){
+            gl_Position = trans * vec4(pos, 1);
+            vcolor = clr;
+        }
+    </script>
+    
+    <script id="fragmentShader" type="x-shader/x-fragment">
+        precision mediump float;
+        
+        varying vec4 vcolor;
+        
+        void main(){
+            gl_FragColor = vcolor;
+        }
+    </script>
+    
+    <script type="text/javascript">
+        window.onload = function(){
+            //Initialize webGL
+            canvas = document.getElementById("mycanvas");
+            gl = canvas.getContext("webgl");
+            
+            //Set output resolution and viewport
+            const pixelRatio = window.devicePixelRatio || 1;
+            canvas.width = pixelRatio * canvas.clientWidth;
+            canvas.height = pixelRatio * canvas.clientHeight;
+            gl.viewport(0, 0, canvas.width, canvas.height);
+            
+            //Initialize other WebGL states
+            gl.clearColor(1, 1 ,1 ,0);
+
+            //-----------------------------------------------------
+            //Initialize vertex buffer objects
+            var positions = [
+			-0.8, 0.4, 0,
+			 0.8, 0.4, 0,
+			 0.8,-0.4, 0,
+			-0.8, 0.4, 0,
+			 0.8,-0.4, 0,
+			-0.8,-0.4, 0			
+			];
+
+	        var position_buffer = gl.createBuffer();
+	        gl.bindBuffer(gl.ARRAY_BUFFER, position_buffer);
+	        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
+
+            var colors = [
+			1, 0, 0, 1,
+            0, 1, 0, 1,
+            0, 0, 1, 1,
+            1, 0, 0, 1,
+            0, 0, 1, 1,
+            1, 0, 1, 1			
+			];
+
+            var color_buffer = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, color_buffer);
+            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW);
+
+            //Compile vertex and fragment shaders into a program
+            const vs_source = document.getElementById("vertexShader").text;
+            const fs_source = document.getElementById("fragmentShader").text;
+
+            const vs = gl.createShader(gl.VERTEX_SHADER);
+            gl.shaderSource(vs, vs_source);
+            gl.compileShader(vs);
+
+            if(!gl.getShaderParameter(vs, gl.COMPILE_STATUS)){
+                alert(gl.getShaderInfoLog(vs));
+                gl.deleteShader(vs);
+            }
+            
+            const fs = gl.createShader(gl.FRAGMENT_SHADER);
+            gl.shaderSource(fs, fs_source);
+            gl.compileShader(fs);
+
+            if(!gl.getShaderParameter(fs, gl.COMPILE_STATUS)){
+                alert(gl.getShaderInfoLog(fs));
+                gl.deleteShader(fs);
+            }
+
+            var prog = gl.createProgram();
+            gl.attachShader(prog, vs);
+            gl.attachShader(prog, fs);
+            gl.linkProgram(prog); 
+            
+            if(!gl.getProgramParameter(prog, gl.LINK_STATUS)){
+                alert(gl.getShaderInfoLog(prog));
+            }
+
+            //Update shader uniform variables
+            var m = gl.getUniformLocation(prog, 'trans');
+
+            var matrix = [
+            1, 0, 0, 0,
+            0, 1, 0, 0,
+            0, 0, 1, 0,
+            0, 0, 0, 1
+            ];
+
+            gl.useProgram(prog);
+            gl.uniformMatrix4fv(m, false, matrix);
+
+            //Set the vertex buffers before rendering
+            var p = gl.getAttribLocation(prog, 'pos');
+            gl.bindBuffer(gl.ARRAY_BUFFER, position_buffer);
+            gl.vertexAttribPointer(p, 3, gl.FLOAT, false, 0, 0);
+            gl.enableVertexAttribArray(p);
+        
+            var c = gl.getAttribLocation(prog, 'clr');
+            gl.bindBuffer(gl.ARRAY_BUFFER, color_buffer);
+            gl.vertexAttribPointer(c, 4, gl.FLOAT, false, 0, 0);
+            gl.enableVertexAttribArray(c);
+
+            //RENDER THE SCENE
+            gl.clear(gl.COLOR_BUFFER_BIT);
+            gl.useProgram(prog);
+            gl.drawArrays(gl.TRIANGLES, 0, 6);
+        }
+    </script>
+
+    <style>
+        #mycanvas {
+            width: 800px;
+            height: 600px;
+            margin: auto;
+            display: block;
+            border: 1px solid black;
+        }
+    </style>
+
+    <title>WebGL Demo: Rectangle</title>
+</head>
+<body>
+    <canvas id="mycanvas"></canvas>
+</body>
+</html>
